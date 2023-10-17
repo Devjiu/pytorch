@@ -249,6 +249,24 @@ void LlgaKernel::run(Stack& stack) {
   GRAPH_DEBUG("In ", debugName(), "\n");
 #endif
 
+  // graph serialization after partitioning. note that this is for
+  // visualization purpose
+  Graph agraph(graph_);
+  for (auto &aop : agraph.get_ops()) {
+      // p_impl is shallow copy
+      const auto p_impl = aop->get_partition();
+      const auto p_id = p_impl->id();
+      auto *bkd = p_impl->get_assigned_backend();
+      auto bkd_name = bkd->get_name();
+      aop->set_attr<std::string>(
+              op_attr::partition_id, std::to_string(p_id));
+      aop->set_attr<std::string>(op_attr::backend, bkd_name);
+  }
+
+  std::stringstream filename;
+  filename << "graph-" << agraph.id() << "-partitioning.json";
+  agraph.serialize(filename.str());
+
   // Grab input values from stack
   auto stackInputs = last(stack, nGraphInputs_);
   auto inputs = fmap(stackInputs, [&](const IValue& v) {

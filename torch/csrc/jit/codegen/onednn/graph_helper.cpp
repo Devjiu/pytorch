@@ -1,5 +1,6 @@
 #include <torch/csrc/jit/codegen/onednn/LlgaTensorImpl.h>
 #include <torch/csrc/jit/codegen/onednn/graph_helper.h>
+#include <oneapi/dnnl/dnnl_graph.hpp>
 
 #include <ATen/core/functional.h>
 #include <torch/csrc/jit/jit_log.h>
@@ -450,6 +451,16 @@ LlgaGraphHelper::LlgaGraphHelper(
   for (auto* node : graph->block()->nodes()) {
     mayAddListConstructIntoConcatPartition(node, opToOwningPartition_);
   }
+
+  auto subgraph = std::make_shared<dnnl_impl::subgraph_t>(
+            part->get_ops(), p_eng, fpmath_mode::strict, false, true);
+    dnnl_impl::subgraph_visualizer_t vis(part->id(), [](const value_t *val) {
+        (void)val;
+        return std::string();
+    });
+    dnnl_impl::pass_pipeline_t pipeline(vis, true, true);
+    dnnl_impl::larger_partition_kernel_t::setup_pipeline_stage1(pipeline);
+    ASSERT_EQ(pipeline.run(subgraph), graph::status::success);
 }
 
 bool LlgaGraphHelper::isLlgaSubgraph(const Node* node) {
