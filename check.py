@@ -31,7 +31,7 @@ model = MLP(INPUT_DIM, OUTPUT_DIM)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
-model.load_state_dict(torch.load('../oneDNN/build/tut1-model.pt'))
+model.load_state_dict(torch.load('tut1-model.pt'))
 
 # enable oneDNN graph fusion globally
 torch.jit.enable_onednn_fusion(True)
